@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workplace Conflict Conversation Simulator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f9f9f8;
+      --surface: #ffffff;
+      --surface2: #f3f2ef;
+      --border: rgba(0,0,0,0.1);
+      --border2: rgba(0,0,0,0.18);
+      --text: #1a1a1a;
+      --text2: #555;
+      --text3: #888;
+      --blue-bg: #e8f0fb;
+      --blue-text: #1a4fa0;
+      --blue-border: rgba(26,79,160,0.25);
+      --green-bg: #e6f4ea;
+      --green-text: #1e6b3c;
+      --amber-bg: #fef8e7;
+      --amber-text: #7a5a00;
+      --amber-border: rgba(200,150,0,0.25);
+      --red-bg: #fdecea;
+      --red-text: #a01a1a;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141414;
+        --surface: #1e1e1e;
+        --surface2: #2a2a2a;
+        --border: rgba(255,255,255,0.1);
+        --border2: rgba(255,255,255,0.18);
+        --text: #f0f0f0;
+        --text2: #aaa;
+        --text3: #666;
+        --blue-bg: #1a2d4a;
+        --blue-text: #7ab3f5;
+        --blue-border: rgba(100,160,255,0.25);
+        --green-bg: #1a2e20;
+        --green-text: #6fcf97;
+        --amber-bg: #2a2010;
+        --amber-text: #f0c060;
+        --amber-border: rgba(200,150,0,0.3);
+        --red-bg: #2e1a1a;
+        --red-text: #f08080;
+      }
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 700px;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      margin-bottom: 1.5rem;
+    }
+    .app-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+    .app-sub {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── TOP BAR ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+    .persona-row { display: flex; align-items: center; gap: 10px; }
+    .avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--blue-bg);
+      color: var(--blue-text);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600;
+      flex-shrink: 0;
+    }
+    .persona-name { font-size: 15px; font-weight: 500; }
+    .persona-role { font-size: 12px; color: var(--text2); }
+    .change-btn {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      color: var(--text2);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .change-btn:hover { background: var(--border); color: var(--text); }
+
+    /* ── SCENE SELECTOR ── */
+    .scene-selector { margin-bottom: 1rem; }
+    .scene-selector h3 { font-size: 14px; font-weight: 500; margin-bottom: 0.75rem; }
+    .scene-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 8px;
+    }
+    .scene-btn {
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.85rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+    }
+    .scene-btn:hover {
+      border-color: var(--blue-border);
+      background: var(--blue-bg);
+    }
+    .scene-btn:hover .scene-title { color: var(--blue-text); }
+    .scene-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+    .scene-sub { font-size: 11px; color: var(--text2); }
+
+    /* ── CONTEXT BANNER ── */
+    .context-banner {
+      font-size: 13px;
+      color: var(--text2);
+      background: var(--surface2);
+      border-left: 3px solid var(--blue-text);
+      padding: 0.65rem 1rem;
+      margin-bottom: 1rem;
+      line-height: 1.6;
+      display: none;
+    }
+
+    /* ── CHAT WINDOW ── */
+    .chat-window {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      min-height: 260px;
+      max-height: 380px;
+      overflow-y: auto;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      scroll-behavior: smooth;
+    }
+    .empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--text3);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    /* ── MESSAGES ── */
+    .msg { display: flex; gap: 8px; max-width: 88%; }
+    .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+    .msg-av {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 600;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .msg.other .msg-av { background: var(--blue-bg); color: var(--blue-text); }
+    .msg.user .msg-av { background: var(--green-bg); color: var(--green-text); }
+    .msg-bubble {
+      padding: 0.6rem 0.85rem;
+      font-size: 14px;
+      line-height: 1.55;
+      border-radius: var(--radius);
+    }
+    .msg.other .msg-bubble {
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 4px var(--radius) var(--radius) var(--radius);
+    }
+    .msg.user .msg-bubble {
+      background: var(--blue-bg);
+      border: 0.5px solid var(--blue-border);
+      color: var(--blue-text);
+      border-radius: var(--radius) 4px var(--radius) var(--radius);
+    }
+
+    /* ── TYPING ── */
+    .typing-dots { display: flex; gap: 4px; padding: 4px 2px; align-items: center; }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text3);
+      animation: bounce 0.9s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.15s; }
+    .dot:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
+
+    /* ── COACH CARD ── */
+    .coach-card {
+      background: var(--amber-bg);
+      border: 0.5px solid var(--amber-border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.75rem;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .coach-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--amber-text);
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .coach-text { color: var(--text); margin-bottom: 0.5rem; }
+    .tag-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 9px;
+      border-radius: 12px;
+    }
+    .tag-good { background: var(--green-bg); color: var(--green-text); }
+    .tag-caution { background: var(--amber-bg); color: var(--amber-text); border: 0.5px solid var(--amber-border); }
+    .tag-improve { background: var(--red-bg); color: var(--red-text); }
+
+    /* ── HINTS ── */
+    .hint-row {
+      display: none;
+      gap: 6px;
+      margin-bottom: 0.6rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .hint-label { font-size: 11px; color: var(--text3); }
+    .hint-btn {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .hint-btn:hover { background: var(--blue-bg); color: var(--blue-text); border-color: var(--blue-border); }
+
+    /* ── INPUT ── */
+    .input-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 0.5rem; }
+    textarea {
+      flex: 1;
+      resize: none;
+      font-size: 14px;
+      font-family: inherit;
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 0.5px solid var(--border2);
+      background: var(--surface);
+      color: var(--text);
+      min-height: 68px;
+      line-height: 1.5;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { outline: none; border-color: var(--blue-text); }
+    textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .send-btn {
+      padding: 0 1.1rem;
+      height: 40px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      background: var(--blue-text);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .send-btn:hover:not(:disabled) { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── FOOTER ── */
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .turn-counter { font-size: 12px; color: var(--text3); }
+    .reset-btn {
+      font-size: 12px;
+      color: var(--text2);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      display: none;
+    }
+    .reset-btn:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="app-header">
+    <div class="app-title">Conflict Conversation Simulator</div>
+    <div class="app-sub">Practice difficult workplace conversations with real-time AI coaching</div>
+  </div>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="persona-row">
+      <div class="avatar" id="other-avatar">?</div>
+      <div>
+        <div class="persona-name" id="other-name">Choose a scenario</div>
+        <div class="persona-role" id="other-role">Select below to begin</div>
+      </div>
+    </div>
+    <button class="change-btn" onclick="toggleSelector()">Change scenario</button>
+  </div>
+
+  <!-- Scene selector -->
+  <div class="card scene-selector" id="scene-selector">
+    <h3>Choose a conflict scenario</h3>
+    <div class="scene-grid">
+      <button class="scene-btn" onclick="selectScene(0)">
+        <div class="scene-title">Employee vs. employee</div>
+        <div class="scene-sub">Tension over shared work</div>
+      </button>
+      <button class="scene-btn" onclick="selectScene(1)">
+        <div class="scene-title">Manager vs. direct report</div>
+        <div class="scene-sub">Performance concern</div>
+      </button>
+      <button class="scene-btn" onclick="selectScene(2)">
+        <div class="scene-title">Giving difficult feedback</div>
+        <div class="scene-sub">Behavior impacting the team</div>
+      </button>
+      <button class="scene-btn" onclick="selectScene(3)">
+        <div class="scene-title">Responding to unfair treatment</div>
+        <div class="scene-sub">Feeling overlooked or dismissed</div>
+      </button>
+      <button class="scene-btn" onclick="selectScene(4)">
+        <div class="scene-title">Disagreeing with a decision</div>
+        <div class="scene-sub">Pushing back constructively</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Context banner -->
+  <div class="context-banner" id="context-banner"></div>
+
+  <!-- Chat window -->
+  <div class="chat-window" id="chat-window">
+    <div class="empty-state">Select a scenario above to begin your practice conversation.</div>
+  </div>
+
+  <!-- Coach feedback -->
+  <div id="coach-area"></div>
+
+  <!-- Hints -->
+  <div class="hint-row" id="hint-row">
+    <span class="hint-label">Try:</span>
+    <button class="hint-btn" id="hint0" onclick="useHint(0)"></button>
+    <button class="hint-btn" id="hint1" onclick="useHint(1)"></button>
+    <button class="hint-btn" id="hint2" onclick="useHint(2)"></button>
+  </div>
+
+  <!-- Input -->
+  <div class="input-row">
+    <textarea id="user-input" placeholder="Select a scenario to begin..." onkeydown="handleKey(event)" disabled></textarea>
+    <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled>Send</button>
+  </div>
+
+  <div class="footer-row">
+    <span class="turn-counter" id="turn-counter"></span>
+    <button class="reset-btn" id="reset-btn" onclick="resetScene()">Start over</button>
+  </div>
+
+</div>
+
+<script>
+const scenes = [
+  {
+    id: 0,
+    name: 'Jordan S.',
+    initials: 'JS',
+    role: 'Colleague — Marketing',
+    context: 'You manage a cross-functional project. Jordan, a peer on the marketing team, has missed two deadlines that held up your team. This is your first direct conversation about it.',
+    opening: "Hey, do you have a minute? I know things have been hectic.",
+    hints: ["Acknowledge the pressure they're under", "Name the specific impact on your team", "Ask what's getting in the way"],
+    systemPrompt: `You are Jordan, a marketing colleague in a workplace conflict simulation. The user is a manager practicing conflict resolution. You missed two project deadlines.
+Play Jordan authentically: a bit defensive at first, but reasonable when approached with empathy. Respond naturally in 1-3 sentences as Jordan would in conversation. Do NOT break character or offer coaching. Keep responses conversational and realistic.`
+  },
+  {
+    id: 1,
+    name: 'Marcus T.',
+    initials: 'MT',
+    role: 'Direct report — Operations',
+    context: "Marcus is a solid employee who has been arriving late and seeming disengaged for the past three weeks. You've set up a one-on-one to check in. Your goal is to understand what's happening and re-engage him.",
+    opening: "Thanks for meeting with me. I'll be honest, I wasn't sure what this was about.",
+    hints: ["Open with curiosity, not accusation", "Separate the behavior from the person", "Ask open-ended questions first"],
+    systemPrompt: `You are Marcus, a direct report in a workplace conflict simulation. The user is practicing a difficult manager conversation. You've been arriving late and disengaged — you're dealing with a personal situation but haven't told anyone at work.
+Be realistic: guarded at first, but open up gradually if the manager is empathetic and non-accusatory. Respond in 1-3 sentences as Marcus. Stay in character always.`
+  },
+  {
+    id: 2,
+    name: 'Priya N.',
+    initials: 'PN',
+    role: 'Team member — Design',
+    context: "Priya is talented but frequently interrupts others in meetings and talks over junior teammates. Two team members have mentioned it to you privately. You need to give Priya this feedback directly.",
+    opening: "You wanted to chat? Hope everything's okay — I feel like things have been going really well lately.",
+    hints: ["Lead with positive intent", "Use specific observed behavior, not labels", "Describe impact before asking for change"],
+    systemPrompt: `You are Priya, a team member receiving difficult feedback in a simulation. The user is a manager practicing giving feedback about interrupting behavior in meetings. You're talented and genuinely unaware of the impact of your behavior.
+React realistically: surprised, maybe a little hurt, potentially defensive. If feedback is delivered with care and specifics, become more receptive. Respond in 1-3 sentences. Stay in character.`
+  },
+  {
+    id: 3,
+    name: 'Director Chen',
+    initials: 'DC',
+    role: 'Your manager — Director',
+    context: "You led a six-month initiative that succeeded, but in the all-hands meeting today your director attributed the work entirely to another team. You've requested time to address it.",
+    opening: "Good timing — I have about ten minutes before my next call. What's on your mind?",
+    hints: ["State facts before feelings", "Avoid ultimatums — focus on recognition", "Ask for what you need specifically"],
+    systemPrompt: `You are Director Chen, a busy manager in a workplace simulation. The user is an employee who feels their work was not credited properly. You genuinely didn't intend to slight them but were focused on the big picture in the presentation.
+React as a real manager would: initially a bit dismissive, then more thoughtful if the employee is calm and specific. Don't be a villain — be human. Respond in 1-3 sentences. Stay in character.`
+  },
+  {
+    id: 4,
+    name: 'Sam R.',
+    initials: 'SR',
+    role: 'Peer manager — Product',
+    context: "Your peer Sam just announced in a team meeting a process change that will significantly slow down your team's workflow — without consulting you first. You've pulled them aside afterward.",
+    opening: "I saw you wanted to talk. Look, I know change is hard, but leadership approved this.",
+    hints: ["Acknowledge their authority while asserting yours", "Focus on shared goals, not territory", "Propose a path forward, not just a complaint"],
+    systemPrompt: `You are Sam, a peer manager in a workplace conflict simulation. You made a process change without consulting the user's team. You believe you had leadership backing and were moving fast.
+Be realistic: a bit dismissive at first, but open to collaboration if approached professionally. Respond in 1-3 sentences. Stay in character.`
+  }
+];
+
+const COACH_SYSTEM = `You are a conflict resolution coach for managers and team leads. The user just typed a message in a difficult workplace conversation simulation.
+
+Provide coaching in this exact JSON format (no markdown, no preamble, no code fences):
+{"feedback":"2-3 sentence balanced coaching observation — acknowledge what worked, flag anything that could land poorly, suggest a specific improvement if needed","tags":[{"label":"Empathetic tone","type":"good"},{"label":"Too vague","type":"improve"}]}
+
+Tag types: "good" (strength), "caution" (watch this), "improve" (needs work). Include 2-4 tags. Be honest but kind. Focus on communication technique.`;
+
+let state = { scene: null, history: [], turns: 0, loading: false, selectorOpen: true };
+
+function toggleSelector() {
+  state.selectorOpen = !state.selectorOpen;
+  document.getElementById('scene-selector').style.display = state.selectorOpen ? 'block' : 'none';
+}
+
+function selectScene(idx) {
+  const scene = scenes[idx];
+  state.scene = scene;
+  state.history = [];
+  state.turns = 0;
+  state.selectorOpen = false;
+
+  document.getElementById('scene-selector').style.display = 'none';
+  document.getElementById('other-avatar').textContent = scene.initials;
+  document.getElementById('other-name').textContent = scene.name;
+  document.getElementById('other-role').textContent = scene.role;
+
+  const banner = document.getElementById('context-banner');
+  banner.style.display = 'block';
+  banner.textContent = scene.context;
+
+  const hintRow = document.getElementById('hint-row');
+  hintRow.style.display = 'flex';
+  scene.hints.forEach((h, i) => { document.getElementById('hint' + i).textContent = h; });
+
+  document.getElementById('chat-window').innerHTML = '';
+  document.getElementById('coach-area').innerHTML = '';
+  document.getElementById('reset-btn').style.display = 'inline';
+  document.getElementById('turn-counter').textContent = '';
+
+  appendMessage('other', scene.opening, scene.initials);
+  state.history.push({ role: 'assistant', content: scene.opening });
+
+  const input = document.getElementById('user-input');
+  input.disabled = false;
+  input.placeholder = 'Type what you would say to ' + scene.name + '...';
+  document.getElementById('send-btn').disabled = false;
+  input.focus();
+}
+
+function appendMessage(who, text, initials) {
+  const chat = document.getElementById('chat-window');
+  const div = document.createElement('div');
+  div.className = 'msg ' + who;
+  const av = document.createElement('div');
+  av.className = 'msg-av';
+  av.textContent = who === 'other' ? (initials || state.scene.initials) : 'You';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = text;
+  if (who === 'user') { div.appendChild(bubble); div.appendChild(av); }
+  else { div.appendChild(av); div.appendChild(bubble); }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping() {
+  const chat = document.getElementById('chat-window');
+  const div = document.createElement('div');
+  div.className = 'msg other';
+  div.id = 'typing-ind';
+  div.innerHTML = `<div class="msg-av">${state.scene.initials}</div><div class="msg-bubble"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typing-ind');
+  if (el) el.remove();
+}
+
+function showCoaching(feedback, tags) {
+  const area = document.getElementById('coach-area');
+  const div = document.createElement('div');
+  div.className = 'coach-card';
+  const tagsHtml = (tags || []).map(t =>
+    `<span class="tag tag-${t.type}">${t.label}</span>`
+  ).join('');
+  div.innerHTML = `<div class="coach-label">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0">
+      <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1"/>
+      <path d="M6 3.5v3l1.5 1" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+    </svg>
+    Coach feedback
+  </div>
+  <div class="coach-text">${feedback}</div>
+  <div class="tag-row">${tagsHtml}</div>`;
+  area.innerHTML = '';
+  area.appendChild(div);
+}
+
+async function sendMessage() {
+  if (state.loading || !state.scene) return;
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.disabled = true;
+  document.getElementById('send-btn').disabled = true;
+  state.loading = true;
+
+  appendMessage('user', text);
+  state.history.push({ role: 'user', content: text });
+  state.turns++;
+  document.getElementById('turn-counter').textContent = `Exchange ${state.turns}`;
+
+  try {
+    const [coachRes, replyRes] = await Promise.all([
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: COACH_SYSTEM,
+          messages: [{ role: 'user', content: `Scene: ${state.scene.context}\n\nThe user just said: "${text}"` }]
+        })
+      }),
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: state.scene.systemPrompt,
+          messages: state.history
+        })
+      })
+    ]);
+
+    const [coachData, replyData] = await Promise.all([coachRes.json(), replyRes.json()]);
+
+    try {
+      const raw = coachData.content[0].text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(raw);
+      showCoaching(parsed.feedback, parsed.tags);
+    } catch(e) {
+      showCoaching(coachData.content[0].text, []);
+    }
+
+    showTyping();
+    await new Promise(r => setTimeout(r, 700));
+    hideTyping();
+
+    const reply = replyData.content[0].text;
+    appendMessage('other', reply);
+    state.history.push({ role: 'assistant', content: reply });
+
+  } catch(err) {
+    hideTyping();
+    showCoaching('Could not reach the coaching API. Check your connection and try again.', [{ label: 'Connection error', type: 'improve' }]);
+  }
+
+  state.loading = false;
+  input.disabled = false;
+  document.getElementById('send-btn').disabled = false;
+  input.focus();
+}
+
+function useHint(idx) {
+  const input = document.getElementById('user-input');
+  input.value = state.scene.hints[idx];
+  input.focus();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function resetScene() {
+  if (state.scene) selectScene(state.scene.id);
+}
+</script>
+</body>
+</html>
